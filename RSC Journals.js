@@ -8,7 +8,7 @@
         "priority": 100,
         "inRepository": true,
         "translatorType": 4,
-        "lastUpdated": "2011-06-20 20:01:36"
+        "lastUpdated": "2011-06-20 20:46:20"
 }
 
 function detectWeb(doc, url)    {
@@ -74,7 +74,7 @@ function scrape(doc,url) {
                 break;
             case "citation_pdf_url":
                 var noPDFNode = doc.evaluate('//label[@class="disabled_link" and @title="PDF"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();            
-                if (!noPDFNode) {Zotero.debug("There is a PDF!");newItem.attachments.push({url:value, title:"RSC Full Text PDF", snapshot:true});}
+                if (!noPDFNode) newItem.attachments.push({url:value, title:"RSC Full Text PDF", snapshot:true});
                 break;
             
             default:
@@ -92,5 +92,26 @@ function scrape(doc,url) {
 }
 
 function doWeb(doc, url)    {
-    scrape(doc, url);
+    var pageType = detectWeb(doc, url);
+    if (pageType == "single")
+        scrape(doc, url);
+    else { // Multiple
+        var namespace = doc.documentElement.namespaceURI;
+        var nsResolver = namespace ? function(prefix) {
+        if (prefix == 'x') return namespace; else return null;
+            } : null;
+        var items = new Array();
+        var titles = doc.evaluate('//div[@class="title_text_s4_jrnls"]/h2/a', doc, nsResolver, XPathResult.ANY_TYPE, null);
+        var anchor;
+        while (anchor=titles.iterateNext()) {
+            items[anchor.href] = Zotero.Utilities.trimInternal(anchor.textContent);
+        }
+        items = Zotero.selectItems(items); // Show select box
+        if (!items) return true;
+    	var urls = new Array();
+		for(var url in items)
+			urls.push(url);
+		Zotero.Utilities.processDocuments(urls, scrape, function () { Zotero.done(); });
+		Zotero.wait();        
+    }
 }
