@@ -8,7 +8,7 @@
         "priority": 100,
         "inRepository": true,
         "translatorType": 4,
-        "lastUpdated": "2011-06-18 19:57:41"
+        "lastUpdated": "2011-06-20 20:01:36"
 }
 
 function detectWeb(doc, url)    {
@@ -36,20 +36,20 @@ function scrape(doc,url) {
         if (prefix == 'x') return namespace; else return null;
     } : null;
        
-       var newItem=new Zotero.Item("journalArticle");
-       newItem.url = doc.location.href;
-       var temp;
-       var xpath;
-       var row;
-       var rows;
+    var newItem=new Zotero.Item("journalArticle");
+    newItem.url = doc.location.href;
+    var temp;
+    var xpath;
+    var row;
+    var rows;
 
-       newItem.attachments = [];
-       var metaTags = doc.getElementsByTagName("meta");
+    newItem.attachments = [];
+    var metaTags = doc.getElementsByTagName("meta");
 
-       var pages = [false, false];
-       var doi = false;
-       var pdf = false;
-       var html = false;
+    var pages = [false, false];
+    var doi = false;
+    var pdf = false;
+    var html = false;
     for (var i = 0; i< metaTags.length; i++) {
         var tag = metaTags[i].getAttribute("name");
         var value = metaTags[i].getAttribute("content");
@@ -68,30 +68,28 @@ function scrape(doc,url) {
             case "citation_doi": if (!newItem.DOI) newItem.DOI = value; break;
             case "citation_abstract_html_url": newItem.attachments.push({url:value, title:"RSC Abstract Record", snapshot:true}); break;
             case "citation_keywords": newItem.tags.push(value); break;
-            case "citation_fulltext_html_url": newItem.attachments.push({url:value, title:"RSC Full Text HTML", snapshot:true}); break;
-            case "citation_pdf_url": newItem.attachments.push({url:value, title:"RSC Full Text PDF", snapshot:true}); break;
+            case "citation_fulltext_html_url": 
+                var noHTMLNode = doc.evaluate('//label[@class="disabled_link" and @title="Rich HTML"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+                if (!noHTMLNode) newItem.attachments.push({url:value, title:"RSC Full Text HTML", snapshot:true});
+                break;
+            case "citation_pdf_url":
+                var noPDFNode = doc.evaluate('//label[@class="disabled_link" and @title="PDF"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();            
+                if (!noPDFNode) {Zotero.debug("There is a PDF!");newItem.attachments.push({url:value, title:"RSC Full Text PDF", snapshot:true});}
+                break;
             
             default:
                 Zotero.debug("Ignoring meta tag: " + tag + " => " + value);
         }
     }
     
-    if (html) newItem.attachments.push({url:html, title:"RSC Full Text HTML"});
-    
     if (pages[0] && pages[1]) newItem.pages = pages.join('-')
     else newItem.pages = pages[0] ? pages[1] : (pages[1] ? pages[1] : "");
 
-    // Abstracts don't seem to come with
     var abstractNode = doc.evaluate('//label[@id="lblAbstractValue"]/p', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
     if (abstractNode) newItem.abstractNote = Zotero.Utilities.trimInternal(abstractNode.textContent);
     
     newItem.complete();
 }
-
-// Notes:
-// (1) Even for old articles where no HTML version is available
-//     a HTML full text snapshot is made, as it is difficult
-//     to tell whether this is the case.
 
 function doWeb(doc, url)    {
     scrape(doc, url);
