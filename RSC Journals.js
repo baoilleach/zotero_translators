@@ -8,7 +8,7 @@
         "priority": 100,
         "inRepository": true,
         "translatorType": 4,
-        "lastUpdated": "2011-06-21 09:38:51"
+        "lastUpdated": "2011-06-21 17:03:06"
 }
 
 function detectWeb(doc, url)    {
@@ -96,9 +96,18 @@ function scrape(doc,url) {
 }
 
 function doWeb(doc, url)    {
+
     var pageType = detectWeb(doc, url);
-    if (pageType == "journalArticle")
-        scrape(doc, url);
+    if (pageType == "journalArticle") {
+        // Is it the abstract page or is it the full text HTML page?
+        if (url.indexOf("/articlehtml/") == -1) // Abstract page
+            scrape(doc, url); 
+        else { // Full text HTML
+            url = url.replace(/\/articlehtml\//, "\/ArticleLanding\/");
+            Zotero.Utilities.processDocuments([url], scrape, function () { Zotero.done(); });
+            Zotero.wait();
+        }
+    }
     else { // Multiple
         var namespace = doc.documentElement.namespaceURI;
         var nsResolver = namespace ? function(prefix) {
