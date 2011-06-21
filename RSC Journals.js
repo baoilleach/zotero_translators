@@ -8,7 +8,7 @@
         "priority": 100,
         "inRepository": true,
         "translatorType": 4,
-        "lastUpdated": "2011-06-20 20:46:20"
+        "lastUpdated": "2011-06-21 09:38:51"
 }
 
 function detectWeb(doc, url)    {
@@ -54,7 +54,7 @@ function scrape(doc,url) {
         var tag = metaTags[i].getAttribute("name");
         var value = metaTags[i].getAttribute("content");
         switch (tag) {
-            case "citation_journal_title": if (!newItem.publicationTitle) newItem.publicationTitle = value; break;
+            case "citation_journal_title": if (!newItem.journalAbbreviation) newItem.journalAbbreviation = value; break;
             case "citation_author":
                 newItem.creators.push(Zotero.Utilities.cleanAuthor(value, "author")); break;
             case "citation_title": if (!newItem.title) newItem.title = value; break;
@@ -88,12 +88,16 @@ function scrape(doc,url) {
     var abstractNode = doc.evaluate('//label[@id="lblAbstractValue"]/p', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
     if (abstractNode) newItem.abstractNote = Zotero.Utilities.trimInternal(abstractNode.textContent);
     
+    newItem.publicationTitle = newItem.journalAbbreviation;
+    var journalTitle = doc.evaluate('//div[@class="chem_soc_title"]/div/h2/a', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+    if (journalTitle) newItem.publicationTitle = Zotero.Utilities.trimInternal(journalTitle.textContent);
+    
     newItem.complete();
 }
 
 function doWeb(doc, url)    {
     var pageType = detectWeb(doc, url);
-    if (pageType == "single")
+    if (pageType == "journalArticle")
         scrape(doc, url);
     else { // Multiple
         var namespace = doc.documentElement.namespaceURI;
