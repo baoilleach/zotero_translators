@@ -1,14 +1,14 @@
 {
-	"translatorID":"938ebe32-2b2e-4349-a5b3-b3a05d3de627",
-	"translatorType":4,
-	"label":"ACS Publications",
-	"creator":"Sean Takats and Michael Berkowitz and Santawort",
-	"target":"http://[^/]*pubs3?.acs.org[^/]*/(?:wls/journals/query/(?:subscriberResults|query)\\.html|acs/journals/toc.page|cgi-bin/(?:article|abstract|sample|asap).cgi)?",
-	"minVersion":"1.0.0b3.r1",
-	"maxVersion":"",
-	"priority":100,
-	"inRepository":true,
-	"lastUpdated":"2011-06-04 19:20:00"
+        "translatorID": "938ebe32-2b2e-4349-a5b3-b3a05d3de627",
+        "label": "ACS Publications",
+        "creator": "Sean Takats and Michael Berkowitz and Santawort",
+        "target": "http://[^/]*pubs3?.acs.org[^/]*/(?:wls/journals/query/(?:subscriberResults|query)\\.html|acs/journals/toc.page|cgi-bin/(?:article|abstract|sample|asap).cgi)?",
+        "minVersion": "1.0.0b3.r1",
+        "maxVersion": "",
+        "priority": 100,
+        "inRepository": true,
+        "translatorType": 4,
+        "lastUpdated": "2011-06-21 21:59:09"
 }
 
 function detectWeb(doc, url) {
@@ -35,9 +35,11 @@ function doWeb(doc, url){
 	Zotero.debug(host);
 	var m = url.match(/https?:\/\/[^\/]*\/doi\/(abs|full)\/([^\?]+)/);
 	var dois = new Array();
+    var lookupJAbbrev = new Array();    
 	if(detectWeb(doc, url) == "multiple") { //search
 		var doi;
 		var title;
+        var journalAbbrev;
 		var availableItems = new Array();
 		var xpath = '//div[@class="articleBox" or @class="articleBox "]';
 		if (doc.evaluate(xpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
@@ -46,10 +48,12 @@ function doWeb(doc, url){
 			do {
 				title = doc.evaluate('./div[@class="articleBoxMeta"]/h2', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 				doi = doc.evaluate('./div[@class="articleBoxMeta"]/h2/a/@href', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent.replace("/doi/abs/","");
+                journalAbbrev = doc.evaluate('./div[@class="articleBoxMeta"]/div[2]/span/cite', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 				if (doi.indexOf("prevSearch") != -1){
 					doi = doi.substring(0,doi.indexOf("?"));
 				}
 				availableItems[doi] = title;
+                lookupJAbbrev[doi] = journalAbbrev;
 			} while (elmt = elmts.iterateNext())
 		}
 		var items = Zotero.selectItems(availableItems);
@@ -66,6 +70,10 @@ function doWeb(doc, url){
 		}
 		Zotero.debug("DOI= "+doi);
 		dois.push(doi);
+        var journalAbbrevNode = doc.evaluate('//div[@id="citation"]/cite', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+        if (journalAbbrevNode)
+            lookupJAbbrev[doi] = journalAbbrevNode.textContent;
+        
 	}
 	
 	var setupSets = [];
@@ -106,6 +114,7 @@ function doWeb(doc, url){
 					{title:"ACS Full Text PDF",url:pdfUrl, mimeType:"application/pdf"},
 					{title:"ACS Full Text Snapshot",url:fullTextUrl, mimeType:"text/html"}
 				);
+                item.journalAbbreviation = lookupJAbbrev[doi];
 				item.complete();
 			});
 			translator.translate();
