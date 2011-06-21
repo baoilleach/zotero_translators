@@ -8,7 +8,7 @@
         "priority": 100,
         "inRepository": true,
         "translatorType": 4,
-        "lastUpdated": "2011-06-21 21:59:09"
+        "lastUpdated": "2011-06-21 22:14:49"
 }
 
 function detectWeb(doc, url) {
@@ -48,7 +48,11 @@ function doWeb(doc, url){
 			do {
 				title = doc.evaluate('./div[@class="articleBoxMeta"]/h2', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 				doi = doc.evaluate('./div[@class="articleBoxMeta"]/h2/a/@href', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent.replace("/doi/abs/","");
-                journalAbbrev = doc.evaluate('./div[@class="articleBoxMeta"]/div[2]/span/cite', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
+                var abbrevNode = doc.evaluate('./div[@class="articleBoxMeta"]/div[2]/span/cite', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+                if (!abbrevNode) // Not on search page
+                    abbrevNode = doc.evaluate('//div[@id="qsScope"]/label/span', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+                if (abbrevNode)  // Found on TOC page
+                    journalAbbrev = abbrevNode.textContent;
 				if (doi.indexOf("prevSearch") != -1){
 					doi = doi.substring(0,doi.indexOf("?"));
 				}
