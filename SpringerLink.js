@@ -8,7 +8,7 @@
         "priority": 100,
         "inRepository": true,
         "translatorType": 4,
-        "lastUpdated": "2011-06-25 18:49:23"
+        "lastUpdated": "2011-06-28 20:35:10"
 }
 
 function detectWeb(doc, url) {
@@ -42,20 +42,23 @@ function getCitation(doc, url) {
     var state = doc.evaluate('//input[@id="__VIEWSTATE"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
     var form = doc.evaluate('//form[@id="LoginForm"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
     
-    var params = "__EVENTVALIDATION=" + validation.value + "&" +
-                 "__VIEWSTATE=" + state.value + "&" +
-                 "ctl00$ctl19$SearchControl$BasicAuthorOrEditorTextBox=&ctl00$ctl19$SearchControl$BasicIssueTextBox=&ctl00$ctl19$SearchControl$BasicPageTextBox=&ctl00$ctl19$SearchControl$BasicPublicationTextBox=&ctl00$ctl19$SearchControl$BasicSearchForTextBox=&ctl00$ctl19$SearchControl$BasicVolumeTextBox=&ctl00$ctl19$cultureList=en-us&" +
+    var params_start = "__EVENTVALIDATION=" + encodeURIComponent(validation.value) + "&" +
+                "__VIEWSTATE=" + encodeURIComponent(state.value) + "&";
+    var params = "ctl00$ctl19$SearchControl$BasicAuthorOrEditorTextBox=&ctl00$ctl19$SearchControl$BasicIssueTextBox=&ctl00$ctl19$SearchControl$BasicPageTextBox=&ctl00$ctl19$SearchControl$BasicPublicationTextBox=&ctl00$ctl19$SearchControl$BasicSearchForTextBox=&ctl00$ctl19$SearchControl$BasicVolumeTextBox=&ctl00$ctl19$cultureList=en-us&" +
                  "ctl00$ContentPrimary$ctl00$ctl00$ExportCitationButton=Export Citation" + "&" +
                  "ctl00$ContentPrimary$ctl00$ctl00$CitationManagerDropDownList=ReferenceManager" + "&" +
                  "ctl00$ContentPrimary$ctl00$ctl00$Export=AbstractRadioButton";
-    params = form.action.split("?")[1] + "&" + params;
+    //params = form.action.split("?")[1] + "&" + params;
     params = encodeURI(params);
+    params = params.replace(/\$/g, "%24");
+    params = params_start + params;
     Zotero.debug(params);
-    Zotero.debug(form.action);
-    Zotero.Utilities.HTTP.doPost("https://springerlink3.metapress.com/secure-login/", params, function(text) {
+    url = "http://www.springerlink.com/content/t773v8827g123601/export-citation/";
+    Zotero.debug(url);
+    Zotero.Utilities.HTTP.doPost(url, params, function(text) {
     	// load translator for RIS
         Zotero.debug("Posted successfully!");
-        Zotero.debug(text); // FAIL!!
+        Zotero.debug(text.substring(1, 100)); // FAIL!!
         
 		text = text.replace("CHAPTER", "CHAP");
 		var translator = Zotero.loadTranslator("import");
